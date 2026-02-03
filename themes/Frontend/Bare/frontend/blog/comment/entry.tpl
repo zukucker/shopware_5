@@ -83,7 +83,18 @@
                         </div>
                     {/block}
 
+
                 </li>
+{block name="frontend_blog_comments_comment_answer"}
+{foreach $sReplies as $reply}
+<div class="entry--answer" style="display:block; width:100%; margin:1rem 1rem;background:#aeaeae85; padding:1rem; border-radius:3px;">
+	<p style="font-style: italic; text-align:right;"><b>Author:</b> {$reply.reply_name}<p>
+	<p style="font-style: italic; text-align:right;">Am: {$reply.created_at|date:date_long}<p>
+	<p><b>Unsere Nachricht:</b><p>
+	<p>{$reply.reply_text}<p>
+</div>
+{/foreach}
+{/block}
             {/foreach}
 
         </ul>
