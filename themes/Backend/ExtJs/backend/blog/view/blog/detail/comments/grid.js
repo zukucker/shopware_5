@@ -100,6 +100,8 @@ Ext.define('Shopware.apps.Blog.view.blog.detail.comments.Grid', {
              */
             'acceptBlogComment',
 
+            'replyComment',
+
             /**
              * Event will be fired when the changed the selection
              *
@@ -154,6 +156,11 @@ Ext.define('Shopware.apps.Blog.view.blog.detail.comments.Grid', {
                 }
             },
             {
+                header: '{s name="detail/main/comments/column/answerd"}Beantwortet{/s}',
+                renderer: me.state,
+                flex: 3
+            },
+            {
                 xtype: 'actioncolumn',
                 width: 55,
                 items: me.getActionColumnItems()
@@ -191,6 +198,13 @@ Ext.define('Shopware.apps.Blog.view.blog.detail.comments.Grid', {
             handler: function (view, rowIndex, colIndex, item) {
                 me.fireEvent('deleteBlogComment', view, rowIndex, colIndex, item);
             }
+        });
+        actionColumnData.push({
+		iconCls: 'sprite-balloon--pencil',
+		tooltip: '{s name="reply_tooltip"}Kommentar beantworten{/s}',
+		handler: function(view, rowIndex, colIndex, item, opts, record) {
+			me.fireEvent('replyComment', view, rowIndex, colIndex, item);
+		}
         });
 
         return actionColumnData;
@@ -266,6 +280,14 @@ Ext.define('Shopware.apps.Blog.view.blog.detail.comments.Grid', {
         }
     },
 
+    state: function() {
+	    var isAnswerd = Ext.Number.randomInt(0, 1);
+	    if (isAnswerd > 0) {
+	      return '<div class="state">Beantwortet</div>';
+	    }else {
+	      return '<div class="state">Nicht beantwortet</div>';
+	    }
+    },
     /**
      * @param { string } value
      * @returns { string }

@@ -25,12 +25,12 @@ Ext.define('Shopware.apps.Blog.view.comment.ReplyWindow', {
     /**
      * Width of the window
      */
-    width: 600,
+    width: 800,
 
     /**
      * Height of the window
      */
-    height: 400,
+    height: 600,
 
     /**
      * Make window modal
@@ -125,8 +125,18 @@ Ext.define('Shopware.apps.Blog.view.comment.ReplyWindow', {
                     },
                     {
                         xtype: 'displayfield',
+                        fieldLabel: 'Headline',
+                        value: Ext.util.Format.ellipsis(me.comment.get('headline'), 100) || '-'
+                    },
+                    {
+                        xtype: 'displayfield',
                         fieldLabel: me.snippets.commentText,
-                        value: Ext.util.Format.ellipsis(me.comment.get('comment'), 100) || '-'
+                        value: Ext.util.Format.ellipsis(me.comment.get('content'), 100) || '-'
+                    },
+                    {
+                        xtype: 'displayfield',
+                        fieldLabel: 'Datum',
+                        value: Ext.util.Format.ellipsis(me.comment.get('creationDate')) || '-'
                     }
                 ]
             });

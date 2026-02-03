@@ -86,6 +86,7 @@ Ext.define('Shopware.apps.Blog.controller.Comment', {
             'blog-blog-detail-comments-grid': {
                 deleteBlogComment: me.onDeleteSingleBlogComment,
                 acceptBlogComment: me.onAcceptSingleComment,
+		replyComment: me.onReplyComment,
                 selectionChange: me.onSelectionChange,
                 itemclick: me.onGridRowClick
             },
@@ -94,10 +95,123 @@ Ext.define('Shopware.apps.Blog.controller.Comment', {
             },
             'blog-blog-detail-comments button[action=acceptSelectedComments]': {
                 click: me.onAcceptMultipleBlogComments
+            },
+            'blog-blog-detail-comments button[action=replyComment]': {
+                click: me.onReplyMultipleBlogComments
             }
         });
     },
 
+
+	/**
+	 * Opens the reply window for a comment
+	 *
+	 * @param comment - The comment record to reply to
+	 */
+	openReplyWindow: function(comment) {
+	    var me = this;
+
+		console.error(comment)
+	    me.replyWindow = Ext.create('Shopware.apps.Blog.view.comment.ReplyWindow', {
+		comment: comment
+	    });
+
+	    me.replyWindow.on('saveReply', function(window, values, comment) {
+		me.onSaveReply(window, values, comment);
+	    });
+
+	    me.replyWindow.show();
+	},
+
+	/**
+	 * Save handler for reply
+	 *
+	 * @param window - The reply window
+	 * @param values - Form values
+	 * @param comment - The comment being replied to
+	 */
+	onSaveReply: function(window, values, comment) {
+	    var me = this;
+
+	    // Show loading mask
+	    window.setLoading(true);
+
+	    // Send AJAX request to create reply
+	    Ext.Ajax.request({
+		url: '{url controller="Blog" action="createReply"}',
+		method: 'POST',
+		params: values,
+		success: function(response) {
+		    var result = Ext.decode(response.responseText);
+
+		    window.setLoading(false);
+
+		    if (result.success) {
+			Shopware.Notification.createGrowlMessage(
+			    '{s name="success_title"}Erfolg{/s}',
+			    '{s name="reply_saved"}Die Antwort wurde erfolgreich gespeichert.{/s}',
+			    'blog-comment-reply'
+			);
+
+			window.destroy();
+
+			// Reload comment store if available
+			if (me.getCommentStore) {
+			    var store = me.getCommentStore();
+			    if (store) {
+				store.load();
+			    }
+			}
+		    } else {
+			Shopware.Notification.createGrowlMessage(
+			    '{s name="error_title"}Fehler{/s}',
+			    result.message || '{s name="reply_error"}Die Antwort konnte nicht gespeichert werden.{/s}',
+			    'blog-comment-reply'
+			);
+		    }
+		},
+		failure: function() {
+		    window.setLoading(false);
+		    Shopware.Notification.createGrowlMessage(
+			'{s name="error_title"}Fehler{/s}',
+			'{s name="reply_error_network"}Ein Netzwerkfehler ist aufgetreten.{/s}',
+			'blog-comment-reply'
+		    );
+		}
+	    });
+	},
+
+	/**
+	 * Loads replies for a comment
+	 *
+	 * @param commentId - The comment ID
+	 * @param callback - Callback function
+	 */
+	loadReplies: function(commentId, callback) {
+	    var me = this;
+
+	    Ext.Ajax.request({
+		url: '{url controller="Blog" action="getReplies"}',
+		method: 'GET',
+		params: {
+		    commentId: commentId
+		},
+		success: function(response) {
+		    var result = Ext.decode(response.responseText);
+
+		    if (result.success && callback) {
+			callback(result.data);
+		    }
+		},
+		failure: function() {
+		    Shopware.Notification.createGrowlMessage(
+			'{s name="error_title"}Fehler{/s}',
+			'{s name="load_replies_error"}Die Antworten konnten nicht geladen werden.{/s}',
+			'blog-comment-reply'
+		    );
+		}
+	    });
+	},
     /**
      * Filters the grid with the passed search value to find the right blog
      *
@@ -209,12 +323,19 @@ Ext.define('Shopware.apps.Blog.controller.Comment', {
         )
     },
     /**
-     * Function to accept a comment
-     * Is called, when the user presses on the actioncolumn accept-button
+     * Function to answer a comment
+     * Is called, when the user presses on the actioncolumn answer-button
      * @param [object] grid - The grid on which the event has been fired
      *
      * @param [integer] rowIndex - Position of the event
      */
+	onReplyComment: function(grid, rowIndex){
+	var me = this, 
+		store = me.subApplication.commentStore,
+		record = store.getAt(rowIndex);
+		me.openReplyWindow(record)
+	},
+
     onAcceptSingleComment: function(grid, rowIndex){
         var me = this,
             store = me.subApplication.commentStore,
@@ -278,6 +399,24 @@ Ext.define('Shopware.apps.Blog.controller.Comment', {
                 }
             }
         )
+    },
+
+    /**
+     * Event listener method which deletes multiple blog comments
+     *
+     * @return void
+     */
+    onReplyMultipleBlogComments: function () {
+        var me = this,
+            grid = me.getCommentGrid(),
+            sm = grid.getSelectionModel(),
+            selection = sm.getSelection(),
+            store = me.subApplication.replyStore,
+            noOfElements = selection.length;
+
+        // Get the user to confirm the delete process
+	// me.openReplyWindow(selection)
+        Shopware.Notification.createGrowlMessage('', 'TBA', 'TBA');
     },
 
     /**
